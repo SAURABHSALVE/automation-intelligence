@@ -28,9 +28,10 @@ TECH_FEEDS = [
 ]
 
 GEO_FEEDS = [
-    ("Reuters World", "https://feeds.reuters.com/reuters/worldNews"),
     ("BBC World", "http://feeds.bbci.co.uk/news/world/rss.xml"),
     ("Al Jazeera", "https://www.aljazeera.com/xml/rss/all.xml"),
+    ("The Guardian World", "https://www.theguardian.com/world/rss"),
+    ("NPR World", "https://feeds.npr.org/1004/rss.xml"),
     ("The Hindu India", "https://www.thehindu.com/news/national/feeder/default.rss"),
 ]
 

@@ -44,6 +44,7 @@ jobs:
           name: morning-report-${{ github.run_id }}
           path: reports/morning_*.md
           retention-days: 30
+          if-no-files-found: warn
 
       - name: Commit report to repository
         if: success()
