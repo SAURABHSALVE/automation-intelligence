@@ -40,7 +40,7 @@ class ProductHuntCollector:
     def __init__(self, api_token: str = "") -> None:
         self.api_token = api_token
 
-    @retry(max_attempts=3, delay=1.5)
+    @retry(max_attempts=2, delay=2.0, exceptions=(requests.ConnectionError, requests.Timeout))
     def fetch_top_posts(self, limit: int = 15) -> List[Dict[str, Any]]:
         logger.info("Fetching Product Hunt top posts")
         today = date.today().isoformat()
@@ -73,6 +73,9 @@ class ProductHuntCollector:
         return sorted(posts, key=lambda x: x["votes"], reverse=True)
 
     def collect(self) -> Dict[str, Any]:
+        if not self.api_token:
+            logger.info("Product Hunt: no API token set — skipping")
+            return {"top_posts": []}
         try:
             posts = self.fetch_top_posts()
         except Exception as exc:

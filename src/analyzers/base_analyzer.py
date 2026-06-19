@@ -48,8 +48,14 @@ class BaseAnalyzer:
         )
         return response.choices[0].message.content
 
+    MAX_DATA_CHARS = 60_000  # GPT-4o supports 128k tokens; stay well under
+
     def _format_data_for_prompt(self, data: Dict[str, Any]) -> str:
-        return json.dumps(data, ensure_ascii=False, indent=2, default=str)
+        text = json.dumps(data, ensure_ascii=False, indent=2, default=str)
+        if len(text) > self.MAX_DATA_CHARS:
+            logger.warning("Data truncated from %d to %d chars for OpenAI", len(text), self.MAX_DATA_CHARS)
+            text = text[: self.MAX_DATA_CHARS] + "\n... [data truncated]"
+        return text
 
     def analyze(self, data: Dict[str, Any]) -> str:
         raise NotImplementedError

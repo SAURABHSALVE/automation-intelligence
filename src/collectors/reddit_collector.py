@@ -34,10 +34,13 @@ class RedditCollector:
     def __init__(self, limit: int = 10) -> None:
         self.limit = limit
 
-    @retry(max_attempts=3, delay=3.0)
+    @retry(max_attempts=2, delay=5.0, exceptions=(requests.ConnectionError, requests.Timeout))
     def _fetch_subreddit_rss(self, sub: str, sort: str = "hot") -> List[Dict[str, Any]]:
         url = f"{self.BASE}/r/{sub}/{sort}.rss"
         resp = requests.get(url, headers=HEADERS, params={"limit": self.limit}, timeout=20)
+        if resp.status_code == 429:
+            logger.warning("Reddit r/%s rate-limited (429) — skipping", sub)
+            return []
         resp.raise_for_status()
         return self._parse_rss(sub, resp.text)
 
@@ -46,8 +49,9 @@ class RedditCollector:
         for sub in subreddits:
             try:
                 posts = self._fetch_subreddit_rss(sub)
-                results.extend(posts)
-                time.sleep(2.5)   # respect Reddit's rate limits
+                if posts:
+                    results.extend(posts)
+                    time.sleep(3)   # only sleep when we actually got data
             except Exception as exc:
                 logger.warning("Reddit r/%s failed: %s", sub, exc)
         return results
