@@ -131,10 +131,52 @@ class NotionReportSaver:
         return (text or "").replace("\x00", "").strip()[:limit]
 
     @staticmethod
-    def _rt(content: str) -> List[Dict[str, Any]]:
-        """Build a rich_text array, safely truncated."""
-        safe = (content or "").replace("\x00", "").strip()[:MAX_RICH_TEXT]
-        return [{"type": "text", "text": {"content": safe}}]
+    def _parse_inline(text: str) -> List[Dict[str, Any]]:
+        """Parse inline markdown into Notion rich_text with bold/italic/code annotations."""
+        text = (text or "").replace("\x00", "").strip()[:MAX_RICH_TEXT]
+        if not text:
+            return [{"type": "text", "text": {"content": ""}}]
+
+        # Order matters: bold+italic first, then bold, then code, strikethrough, italic
+        pattern = re.compile(
+            r'\*\*\*(.+?)\*\*\*'   # bold+italic
+            r'|\*\*(.+?)\*\*'       # bold
+            r'|`(.+?)`'             # inline code
+            r'|~~(.+?)~~'           # strikethrough
+            r'|\*(.+?)\*'           # italic
+        )
+
+        segments: List[Dict[str, Any]] = []
+        last = 0
+        for m in pattern.finditer(text):
+            if m.start() > last:
+                segments.append({"type": "text", "text": {"content": text[last:m.start()]}})
+            bold_italic, bold, code, strike, italic = (
+                m.group(1), m.group(2), m.group(3), m.group(4), m.group(5)
+            )
+            if bold_italic:
+                segments.append({"type": "text", "text": {"content": bold_italic},
+                                  "annotations": {"bold": True, "italic": True}})
+            elif bold:
+                segments.append({"type": "text", "text": {"content": bold},
+                                  "annotations": {"bold": True}})
+            elif code:
+                segments.append({"type": "text", "text": {"content": code},
+                                  "annotations": {"code": True}})
+            elif strike:
+                segments.append({"type": "text", "text": {"content": strike},
+                                  "annotations": {"strikethrough": True}})
+            elif italic:
+                segments.append({"type": "text", "text": {"content": italic},
+                                  "annotations": {"italic": True}})
+            last = m.end()
+        if last < len(text):
+            segments.append({"type": "text", "text": {"content": text[last:]}})
+        return segments or [{"type": "text", "text": {"content": text}}]
+
+    @classmethod
+    def _rt(cls, content: str) -> List[Dict[str, Any]]:
+        return cls._parse_inline(content)
 
     # Emoji prefixes that signal a callout block
     _CALLOUT_EMOJIS = {
@@ -158,7 +200,7 @@ class NotionReportSaver:
 
             # H1 — add divider before each major section (except the first)
             if s.startswith("# "):
-                if blocks:
+                if blocks and blocks[-1].get("type") != "divider":
                     blocks.append({"object": "block", "type": "divider", "divider": {}})
                 blocks.append({
                     "object": "block", "type": "heading_1",
@@ -215,14 +257,14 @@ class NotionReportSaver:
                 prev_was_h1 = False
                 continue
 
-            # Explicit divider
+            # Explicit divider — skip consecutive duplicates
             if s.startswith("---") or s.startswith("***"):
-                blocks.append({"object": "block", "type": "divider", "divider": {}})
+                if not blocks or blocks[-1].get("type") != "divider":
+                    blocks.append({"object": "block", "type": "divider", "divider": {}})
                 prev_was_h1 = False
                 continue
 
             # Callout: paragraph that starts with a known emoji
-            first_char = s[:2].strip()
             matched_emoji = next(
                 (e for e in self._CALLOUT_EMOJIS if s.startswith(e)), None
             )
