@@ -36,7 +36,7 @@ class EmailSender:
         self.password = os.environ["EMAIL_PASSWORD"]
         self.smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
         self.smtp_port = int(os.getenv("SMTP_PORT", "587"))
-        self.recipient = os.getenv("EMAIL_RECIPIENT", self.email)
+        self.recipient = os.getenv("EMAIL_RECIPIENT") or self.email
 
     def _load_template(self, report_type: str) -> str:
         rel = TEMPLATE_MAP.get(report_type, TEMPLATE_MAP["morning"])
