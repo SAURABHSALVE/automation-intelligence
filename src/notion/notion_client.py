@@ -136,36 +136,114 @@ class NotionReportSaver:
         safe = (content or "").replace("\x00", "").strip()[:MAX_RICH_TEXT]
         return [{"type": "text", "text": {"content": safe}}]
 
+    # Emoji prefixes that signal a callout block
+    _CALLOUT_EMOJIS = {
+        "🔴": "red", "🚨": "red", "⚠️": "orange",
+        "🚀": "blue", "💡": "yellow", "🌐": "blue",
+        "💰": "green", "📊": "purple", "🔭": "gray",
+        "🎬": "pink", "🌍": "green", "⚡": "yellow",
+        "🧠": "purple", "📰": "default", "🔥": "orange",
+    }
+
     def _md_to_blocks(self, md_text: str) -> List[Dict[str, Any]]:
         blocks: List[Dict[str, Any]] = []
+        prev_was_h1 = False
+
         for line in md_text.split("\n"):
             s = line.rstrip()
+
             if not s:
+                prev_was_h1 = False
                 continue
+
+            # H1 — add divider before each major section (except the first)
             if s.startswith("# "):
-                blocks.append({"object": "block", "type": "heading_1",
-                                "heading_1": {"rich_text": self._rt(s[2:])}})
-            elif s.startswith("## "):
-                blocks.append({"object": "block", "type": "heading_2",
-                                "heading_2": {"rich_text": self._rt(s[3:])}})
-            elif s.startswith("### "):
-                blocks.append({"object": "block", "type": "heading_3",
-                                "heading_3": {"rich_text": self._rt(s[4:])}})
-            elif s.startswith("- ") or s.startswith("* "):
+                if blocks:
+                    blocks.append({"object": "block", "type": "divider", "divider": {}})
+                blocks.append({
+                    "object": "block", "type": "heading_1",
+                    "heading_1": {
+                        "rich_text": self._rt(s[2:]),
+                        "color": "purple_background",
+                        "is_toggleable": False,
+                    },
+                })
+                prev_was_h1 = True
+                continue
+
+            # H2 — colored heading
+            if s.startswith("## "):
+                blocks.append({
+                    "object": "block", "type": "heading_2",
+                    "heading_2": {
+                        "rich_text": self._rt(s[3:]),
+                        "color": "blue",
+                        "is_toggleable": False,
+                    },
+                })
+                prev_was_h1 = False
+                continue
+
+            # H3
+            if s.startswith("### "):
+                blocks.append({
+                    "object": "block", "type": "heading_3",
+                    "heading_3": {"rich_text": self._rt(s[4:])},
+                })
+                prev_was_h1 = False
+                continue
+
+            # Bullet list
+            if s.startswith("- ") or s.startswith("* "):
                 blocks.append({"object": "block", "type": "bulleted_list_item",
                                 "bulleted_list_item": {"rich_text": self._rt(s[2:])}})
-            elif re.match(r"^\d+\. ", s):
+                prev_was_h1 = False
+                continue
+
+            # Numbered list
+            if re.match(r"^\d+\. ", s):
                 content = re.sub(r"^\d+\. ", "", s)
                 blocks.append({"object": "block", "type": "numbered_list_item",
                                 "numbered_list_item": {"rich_text": self._rt(content)}})
-            elif s.startswith("> "):
+                prev_was_h1 = False
+                continue
+
+            # Blockquote
+            if s.startswith("> "):
                 blocks.append({"object": "block", "type": "quote",
                                 "quote": {"rich_text": self._rt(s[2:])}})
-            elif s.startswith("---") or s.startswith("***"):
+                prev_was_h1 = False
+                continue
+
+            # Explicit divider
+            if s.startswith("---") or s.startswith("***"):
                 blocks.append({"object": "block", "type": "divider", "divider": {}})
-            else:
-                blocks.append({"object": "block", "type": "paragraph",
-                                "paragraph": {"rich_text": self._rt(s)}})
+                prev_was_h1 = False
+                continue
+
+            # Callout: paragraph that starts with a known emoji
+            first_char = s[:2].strip()
+            matched_emoji = next(
+                (e for e in self._CALLOUT_EMOJIS if s.startswith(e)), None
+            )
+            if matched_emoji:
+                color = self._CALLOUT_EMOJIS[matched_emoji]
+                blocks.append({
+                    "object": "block", "type": "callout",
+                    "callout": {
+                        "rich_text": self._rt(s),
+                        "icon": {"type": "emoji", "emoji": matched_emoji},
+                        "color": f"{color}_background",
+                    },
+                })
+                prev_was_h1 = False
+                continue
+
+            # Regular paragraph
+            blocks.append({"object": "block", "type": "paragraph",
+                            "paragraph": {"rich_text": self._rt(s)}})
+            prev_was_h1 = False
+
         return blocks
 
     @staticmethod
