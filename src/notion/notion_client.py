@@ -19,6 +19,7 @@ CATEGORY_MAP = {
     "morning": "Morning AI",
     "evening": "Evening Tech",
     "geo": "GeoPolitics",
+    "space": "Space & Science",
 }
 
 

@@ -21,12 +21,14 @@ SUBJECTS = {
     "morning": "🌅 Saurabh Labs Morning Intelligence — {date}",
     "evening": "🌆 Saurabh Labs Evening Tech Brief — {date}",
     "geo": "🌍 Saurabh Labs Geo & History Brief — {date}",
+    "space": "🔭 Saurabh Labs Space & Science Brief — {date}",
 }
 
 TEMPLATE_MAP = {
     "morning": "src/templates/morning_email.html",
     "evening": "src/templates/evening_email.html",
     "geo": "src/templates/geo_email.html",
+    "space": "src/templates/space_email.html",
 }
 
 
