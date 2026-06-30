@@ -1,58 +1,58 @@
-name: Morning Intelligence Report
+# name: Morning Intelligence Report
 
-on:
-  schedule:
-    # 7 AM IST = 1:30 AM UTC
-    - cron: "30 1 * * *"
-  workflow_dispatch:
+# on:
+#   schedule:
+#     # 7 AM IST = 1:30 AM UTC
+#     - cron: "30 1 * * *"
+#   workflow_dispatch:
 
-jobs:
-  generate-morning-report:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      contents: write
+# jobs:
+#   generate-morning-report:
+#     runs-on: ubuntu-latest
+#     timeout-minutes: 30
+#     permissions:
+#       contents: write
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: "pip"
+#       - name: Set up Python 3.11
+#         uses: actions/setup-python@v5
+#         with:
+#           python-version: "3.11"
+#           cache: "pip"
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+#       - name: Install dependencies
+#         run: pip install -r requirements.txt
 
-      - name: Run Morning Intelligence Report
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
-          EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
-          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-          EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
-          SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
-          SMTP_PORT: ${{ secrets.SMTP_PORT }}
-          PRODUCT_HUNT_API_TOKEN: ${{ secrets.PRODUCT_HUNT_API_TOKEN }}
-        run: python scripts/run_morning.py
+#       - name: Run Morning Intelligence Report
+#         env:
+#           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+#           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+#           NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+#           EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
+#           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+#           EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
+#           SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+#           SMTP_PORT: ${{ secrets.SMTP_PORT }}
+#           PRODUCT_HUNT_API_TOKEN: ${{ secrets.PRODUCT_HUNT_API_TOKEN }}
+#         run: python scripts/run_morning.py
 
-      - name: Upload report artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: morning-report-${{ github.run_id }}
-          path: reports/morning_*.md
-          retention-days: 30
-          if-no-files-found: warn
+#       - name: Upload report artifact
+#         if: always()
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: morning-report-${{ github.run_id }}
+#           path: reports/morning_*.md
+#           retention-days: 30
+#           if-no-files-found: warn
 
-      - name: Commit report to repository
-        if: success()
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add reports/morning_*.md || true
-          git diff --staged --quiet || git commit -m "feat: morning intelligence report $(date +'%Y-%m-%d')"
-          git push || true
+#       - name: Commit report to repository
+#         if: success()
+#         run: |
+#           git config --local user.email "github-actions[bot]@users.noreply.github.com"
+#           git config --local user.name "github-actions[bot]"
+#           git add reports/morning_*.md || true
+#           git diff --staged --quiet || git commit -m "feat: morning intelligence report $(date +'%Y-%m-%d')"
+#           git push || true

@@ -1,58 +1,58 @@
-name: Evening Tech Brief
+# name: Evening Tech Brief
 
-on:
-  schedule:
-    # 9 PM IST = 3:30 PM UTC
-    - cron: "30 15 * * *"
-  workflow_dispatch:
+# on:
+#   schedule:
+#     # 9 PM IST = 3:30 PM UTC
+#     - cron: "30 15 * * *"
+#   workflow_dispatch:
 
-jobs:
-  generate-evening-report:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      contents: write
+# jobs:
+#   generate-evening-report:
+#     runs-on: ubuntu-latest
+#     timeout-minutes: 30
+#     permissions:
+#       contents: write
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: "pip"
+#       - name: Set up Python 3.11
+#         uses: actions/setup-python@v5
+#         with:
+#           python-version: "3.11"
+#           cache: "pip"
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+#       - name: Install dependencies
+#         run: pip install -r requirements.txt
 
-      - name: Run Evening Tech Brief
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
-          EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
-          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-          EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
-          SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
-          SMTP_PORT: ${{ secrets.SMTP_PORT }}
-          PRODUCT_HUNT_API_TOKEN: ${{ secrets.PRODUCT_HUNT_API_TOKEN }}
-        run: python scripts/run_evening.py
+#       - name: Run Evening Tech Brief
+#         env:
+#           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+#           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+#           NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+#           EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
+#           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+#           EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
+#           SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+#           SMTP_PORT: ${{ secrets.SMTP_PORT }}
+#           PRODUCT_HUNT_API_TOKEN: ${{ secrets.PRODUCT_HUNT_API_TOKEN }}
+#         run: python scripts/run_evening.py
 
-      - name: Upload report artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: evening-report-${{ github.run_id }}
-          path: reports/evening_*.md
-          retention-days: 30
-          if-no-files-found: warn
+#       - name: Upload report artifact
+#         if: always()
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: evening-report-${{ github.run_id }}
+#           path: reports/evening_*.md
+#           retention-days: 30
+#           if-no-files-found: warn
 
-      - name: Commit report to repository
-        if: success()
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add reports/evening_*.md || true
-          git diff --staged --quiet || git commit -m "feat: evening tech brief $(date +'%Y-%m-%d')"
-          git push || true
+#       - name: Commit report to repository
+#         if: success()
+#         run: |
+#           git config --local user.email "github-actions[bot]@users.noreply.github.com"
+#           git config --local user.name "github-actions[bot]"
+#           git add reports/evening_*.md || true
+#           git diff --staged --quiet || git commit -m "feat: evening tech brief $(date +'%Y-%m-%d')"
+#           git push || true
